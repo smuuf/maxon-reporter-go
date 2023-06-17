@@ -1,0 +1,48 @@
+{
+	"target": [
+		"https://httpbingo.org/post",
+		"https://localhost/report",
+	],
+	"gatherers": [
+		// Paths relative to this config JSON file.
+		"./gatherers/machine.sh",
+		"./gatherers/some_script.py",
+	],
+	"env": {
+		"SOME_ENV_VAR_XYZ": "This env var is available in gatherers",
+		"ANOTHER_ENV_VAR_ABC": "And this one too...",
+	},
+	"payload": {
+		"machine": {
+			"name": "some_machine",
+			"hostname": "${machine.hostname}",
+			"title": "Some Machine",
+		},
+		"fields": [
+			{
+				"title": "Load Score",
+				"type": "number",
+				"value": "${100 * (machine.load_avg / machine.cpu_count)}",
+				"config": {
+					"warning": "120",
+					"alert": "150",
+					"unit": "%",
+				},
+			},
+			{
+				"title": "Load AVG",
+				"type": "timeline",
+				"value": "${machine.load_avg}",
+				"config": {
+					"warning": "${1.2 * machine.cpu_count}",
+					"alert": "${1.8 * machine.cpu_count}",
+				},
+			},
+			{
+				"title": "Random number",
+				"type": "number",
+				"value": "${random_number}",
+			}
+		]
+	}
+}
