@@ -28,6 +28,8 @@ func buildPayload(
 			if err == nil {
 				template[k] = _v
 			}
+		case float64:
+			template[k] = v
 		case StringKeyMap:
 			template[k] = buildPayload(v, vars)
 		case []interface{}:
