@@ -26,7 +26,7 @@ build:
 
 build-release:
 	# Request non-dev-build.
-	BUILD_DEV=0 $(MAKE) build
+	BUILD_DEV=0 CGO_ENABLED=0 $(MAKE) build
 	# Pack the built binary via upx (we get smaller binary).
 	upx-ucl ./$(BINARY_PATH)
 
