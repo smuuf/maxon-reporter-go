@@ -115,7 +115,7 @@ func main() {
 			// We're the parent process - we'll tell the client the reporter
 			// is being daemonized and then exit.
 			fmt.Println("Daemonizing ...")
-			return
+			os.Exit(0)
 		}
 	}
 
