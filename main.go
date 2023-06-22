@@ -36,7 +36,7 @@ func initialize() {
 	err := parser.Parse(os.Args)
 	if err != nil {
 		fmt.Print(parser.Usage(err))
-		return
+		os.Exit(1)
 	}
 
 	settings := &internal.Settings
