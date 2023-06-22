@@ -15,7 +15,7 @@ func Daemonize() (bool, *daemon.Context) {
 	ctx := &daemon.Context{
 		PidFileName: filepath.Join(Settings.SelfDir, ".reporter.pid"),
 		PidFilePerm: 0644,
-		LogFileName: "ahoj",
+		LogFileName: "reporter.log",
 	}
 
 	runningProcess, _ := ctx.Search()
