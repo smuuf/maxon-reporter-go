@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reporter/internal"
 	_ "testing"
+	"time"
 
 	"github.com/akamensky/argparse"
 )
@@ -91,7 +92,9 @@ func main() {
 
 	reporter := internal.Reporter{
 		ConfigJson: loadedConfig,
-		HttpClient: &http.Client{},
+		HttpClient: &http.Client{
+			Timeout: 1 * time.Minute, // Payload requests will timeout after this.
+		},
 	}
 
 	reporter.Single()

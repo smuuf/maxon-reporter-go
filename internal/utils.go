@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -129,4 +130,13 @@ func readIniValues(bytes []byte) StringMap {
 	}
 
 	return result
+}
+
+// This function returns true all timeout errors including the value
+// context.DeadlineExceeded. That value satisfies the net.Error interface and
+// has a Timeout method that always returns true.
+// Thanks https://stackoverflow.com/a/56086437/1285669
+func isTimeoutError(err error) bool {
+	e, ok := err.(net.Error)
+	return ok && e.Timeout()
 }

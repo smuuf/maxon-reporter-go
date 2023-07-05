@@ -26,7 +26,7 @@ func Daemonize() (bool, *daemon.Context) {
 		// This delay seems to fix some weird behavior of Reborn() if it's
 		// called when the already running daemon process might not be
 		// terminated yet.
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 	}
 
 	child, _ := ctx.Reborn()

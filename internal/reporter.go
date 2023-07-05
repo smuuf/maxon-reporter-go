@@ -68,7 +68,6 @@ func executeGatherer(
 }
 
 func (r *Reporter) sendPayload(payload PayloadType) {
-
 	jsonPayload, err := json.Marshal(payload)
 	FatalExitOnError(err)
 
@@ -93,7 +92,11 @@ func (r *Reporter) sendPayload(payload PayloadType) {
 		fmt.Printf("Sending payload to: %s ", target)
 		response, err := r.HttpClient.Do(request)
 		if err != nil {
-			fmt.Printf("[Error: %s]\n", err.Error())
+			if isTimeoutError(err) {
+				fmt.Println("[Error: Request timeout]")
+			} else {
+				fmt.Printf("[Error: %s]\n", err.Error())
+			}
 		} else {
 			fmt.Printf("[%s]\n", response.Status)
 			defer response.Body.Close()
@@ -104,6 +107,7 @@ func (r *Reporter) sendPayload(payload PayloadType) {
 func (r *Reporter) Single() {
 	var wg sync.WaitGroup
 	gatherers := r.ConfigJson.Gatherers
+
 	// Prepare empty slice for storing results of gatherers. We do this to keep
 	// track of their order (gatherers are executed asynchronously).
 	// This slice will then be used to build the final single StringMap
