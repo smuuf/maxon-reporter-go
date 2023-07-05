@@ -50,6 +50,21 @@ func TestEvalExprOk(t *testing.T) {
 
 }
 
+func TestEvalExprParseError(t *testing.T) {
+
+	var vars = make(EvalVariables)
+
+	_, err := evalExpression("1.=", vars)
+	assert.ErrorContains(t, err, "cannot parse expression")
+	_, err = evalExpression(".", vars)
+	assert.ErrorContains(t, err, "cannot parse expression")
+	_, err = evalExpression("-", vars)
+	assert.ErrorContains(t, err, "cannot parse expression")
+	_, err = evalExpression("a a", vars)
+	assert.ErrorContains(t, err, "cannot parse expression")
+
+}
+
 func TestEvalExprMissingVars(t *testing.T) {
 
 	var vars = make(EvalVariables)
