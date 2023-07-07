@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -52,12 +53,21 @@ func executeGatherer(
 	channel chan<- *OrderedGathererResult,
 	index int,
 	gathererPath string,
+	env map[string]string,
 ) {
 	defer (*wg).Done()
 
 	println("Executing gatherer:", TryMakingRelativePath(gathererPath))
-	result := exec.Command(gathererPath)
-	stdout, err := result.Output()
+	cmd := exec.Command(gathererPath)
+
+	// Load Env variables from config and set them to subprocess Env.
+	cmd.Env = os.Environ()
+
+	for key, value := range env {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+
+	stdout, err := cmd.Output()
 
 	channel <- &OrderedGathererResult{
 		index:     index,
@@ -113,15 +123,17 @@ func (r *Reporter) Single() {
 	// This slice will then be used to build the final single StringMap
 	// containing all results of all gatherers (and because we keep information
 	// about the order we get predictable behavior when two gatherers return
-	// values under indentital key - the latter will overwrite the former.)
+	// values under identical key - the latter will overwrite the former.)
 	results := make([]StringMap, len(gatherers))
 
 	channel := make(chan *OrderedGathererResult)
 
+	env := r.ConfigJson.Env
+
 	// Run gatherers asynchronously in goroutines.
 	for index, gatherer := range gatherers {
 		wg.Add(1)
-		go executeGatherer(&wg, channel, index, gatherer)
+		go executeGatherer(&wg, channel, index, gatherer, env)
 	}
 
 	// Wait for all goroutines to finish.
