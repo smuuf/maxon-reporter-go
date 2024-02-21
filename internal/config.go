@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/tidwall/jsonc"
 )
 
@@ -71,7 +73,7 @@ func FindConfig() string {
 
 		tried = append(tried, path)
 		if IsExistingFile(path) {
-			println("Found config:", path)
+			log.Info("Found config:", path)
 			return path
 		}
 	}

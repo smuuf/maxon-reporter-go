@@ -3,17 +3,18 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"regexp"
 
+	log "github.com/sirupsen/logrus"
+
 	"gopkg.in/ini.v1"
 )
 
 func PrintHeader() {
-	fmt.Printf("Maxon Reporter-Go [version %s] by Premysl Karbula\n\n", ReporterVersion)
+	log.Infof("Maxon Reporter-Go [version %s] by Premysl Karbula", ReporterVersion)
 }
 
 func FatalExitOnError(err error) {

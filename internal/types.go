@@ -26,6 +26,7 @@ type ReporterSettings struct {
 	VerboseMode    bool   // Populated via CLI argument "--verbose", if set.
 	DaemonMode     bool   // True by default, false if "--try"
 	ForegroundMode bool   // False by default, true if "--foreground"
+	LogLevel       string // Populated via CLI argument "--log-level", if set.
 }
 
 // Struct representing config read from config.json file.
