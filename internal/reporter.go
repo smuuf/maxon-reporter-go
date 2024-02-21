@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/mohae/deepcopy"
 )
 
@@ -57,7 +59,7 @@ func executeGatherer(
 ) {
 	defer (*wg).Done()
 
-	println("Executing gatherer:", TryMakingRelativePath(gathererPath))
+	log.Info("Executing gatherer:", TryMakingRelativePath(gathererPath))
 	cmd := exec.Command(gathererPath)
 
 	// Load Env variables from config and set them to subprocess Env.
@@ -99,16 +101,17 @@ func (r *Reporter) sendPayload(payload PayloadType) {
 		request.Header.Set("User-Agent", userAgent)
 		request.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-		fmt.Printf("Sending payload to: %s ", target)
+		log.Infof("Sending payload to: %s", target)
 		response, err := r.HttpClient.Do(request)
+
 		if err != nil {
 			if isTimeoutError(err) {
-				fmt.Println("[Error: Request timeout]")
+				log.Errorf("Request timeout exceeded to: %s\n", target)
 			} else {
-				fmt.Printf("[Error: %s]\n", err.Error())
+				log.Errorf("Request failed: %s\n", err.Error())
 			}
 		} else {
-			fmt.Printf("[%s]\n", response.Status)
+			log.Infof("Response [%s]", response.Status)
 			defer response.Body.Close()
 		}
 	}
@@ -169,10 +172,6 @@ func (r *Reporter) Run() {
 		// "gathering" done and it makes sense to wait at this point.
 		time.Sleep(10 * time.Second)
 
-		// Make empty line between gatherings, for better readability of
-		// Reporter's CLI output.
-		println()
-
 		r.Single()
 	}
 }
@@ -182,11 +181,11 @@ func processResults(channel chan *OrderedGathererResult, results *[]StringMap) {
 	// order).
 	for result := range channel {
 		if result.exitError != nil {
-			fmt.Printf("Gatherer %s exited with non-zero code: ", TryMakingRelativePath(result.gatherer))
+			log.Errorf("Gatherer %s exited with non-zero code: ", TryMakingRelativePath(result.gatherer))
 			if exitErr, ok := result.exitError.(*exec.ExitError); ok {
-				println(exitErr.ExitCode())
+				log.Error(exitErr.ExitCode())
 			} else {
-				println("Unexpected error when processing exit code:", result.exitError.Error())
+				log.Error("Unexpected error when processing exit code:", result.exitError.Error())
 			}
 		} else {
 			(*results)[result.index] = result.data

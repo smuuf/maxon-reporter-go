@@ -2,12 +2,10 @@ package internal
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
-	"gopkg.in/natefinch/lumberjack.v2"
 	"gopkg.in/sevlyar/go-daemon.v0"
 )
 
@@ -17,19 +15,7 @@ func Daemonize() (bool, *daemon.Context) {
 	ctx := &daemon.Context{
 		PidFileName: filepath.Join(Settings.SelfDir, ".reporter.pid"),
 		PidFilePerm: 0644,
-		LogFileName: filepath.Join(Settings.SelfDir, "reporter.log"),
-		LogFilePerm: 0644,
 	}
-
-	// Set up log rotation
-	log.SetOutput(&lumberjack.Logger{
-		Filename:   ctx.LogFileName,
-		MaxSize:    20, // MB
-		MaxBackups: 1,
-		MaxAge:     30, // days
-		Compress:   false,
-	})
-	log.Println("Log rotation enabled.")
 
 	runningProcess, _ := ctx.Search()
 	if runningProcess != nil {
