@@ -2,18 +2,23 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mohae/deepcopy"
 )
+
+// Maximum time a gatherer subprocess is allowed to run before it's killed.
+var gathererTimeout = 30 * time.Second
 
 // Recursively iterates over a payload template and expands variables and
 // expressions in all of the string values present. The result is then returned.
@@ -60,7 +65,22 @@ func executeGatherer(
 	defer (*wg).Done()
 
 	log.Info("Executing gatherer:", TryMakingRelativePath(gathererPath))
-	cmd := exec.Command(gathererPath)
+
+	ctx, cancel := context.WithTimeout(context.Background(), gathererTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, gathererPath)
+
+	// Run the gatherer in its own process group and kill the whole group (not
+	// just its immediate process) on timeout. Otherwise a child process the
+	// gatherer spawns (e.g. a script invoking another binary) would be left
+	// orphaned and keep running - and keep the stdout pipe open - well past
+	// the timeout.
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error {
+		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	}
+	cmd.WaitDelay = 5 * time.Second
 
 	// Load Env variables from config and set them to subprocess Env.
 	cmd.Env = os.Environ()
@@ -70,6 +90,10 @@ func executeGatherer(
 	}
 
 	stdout, err := cmd.Output()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		log.Errorf("Gatherer %s timed out after %s and was killed", TryMakingRelativePath(gathererPath), gathererTimeout)
+	}
 
 	channel <- &OrderedGathererResult{
 		index:     index,
@@ -90,12 +114,11 @@ func (r *Reporter) sendPayload(payload PayloadType) {
 		println(string(pretty))
 	}
 
-	bytes := bytes.NewBuffer(jsonPayload)
 	userAgent := fmt.Sprintf("maxon-reporter[go][%s]", ReporterVersion)
 
 	for _, target := range r.ConfigJson.Target {
 
-		request, err := http.NewRequest("POST", target, bytes)
+		request, err := http.NewRequest("POST", target, bytes.NewReader(jsonPayload))
 		FatalExitOnError(err)
 
 		request.Header.Set("User-Agent", userAgent)
